@@ -1,0 +1,23 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+env/
+.env
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+coverage/
+.pytest_cache/
+*.log

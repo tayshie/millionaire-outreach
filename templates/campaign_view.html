@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ campaign.name }} - Wealth Outreach</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-inner">
+            <h1 class="nav-title">Wealth Outreach</h1>
+            <div class="nav-links">
+                <a href="/">Dashboard</a>
+                <a href="/contacts">Contacts</a>
+                <a href="/campaigns" class="active">Campaigns</a>
+                <a href="/templates">Templates</a>
+                <a href="/scrape">Find Contacts</a>
+                <a href="/settings">Settings</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="flex-between">
+            <h2>{{ campaign.name }}</h2>
+            <div>
+                {% if campaign.status == 'draft' %}
+                <button class="btn btn-primary" onclick="showLaunchOptions()">Launch Campaign</button>
+                <a href="/campaign/{{ campaign.id }}/edit" class="btn">Edit</a>
+                {% endif %}
+                <form method="POST" action="/campaign/{{ campaign.id }}/delete" style="display:inline" onsubmit="return confirm('Delete this campaign and all its messages?')">
+                    <button class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">{{ stats.sent }}</div>
+                <div class="stat-label">Sent</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ stats.replies }}</div>
+                <div class="stat-label">Replies</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ stats.donations }}</div>
+                <div class="stat-label">Donations</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">${{ "%.2f"|format(stats.donation_total|float) }}</div>
+                <div class="stat-label">Total Donated</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">
+                    <span class="badge badge-{{ campaign.status }}">{{ campaign.status }}</span>
+                </div>
+                <div class="stat-label">Status</div>
+            </div>
+        </div>
+
+        <!-- Launch Modal -->
+        <div id="launch-modal" class="modal" style="display:none">
+            <div class="modal-content card" style="max-width:500px;margin:2rem auto">
+                <h3>Launch Campaign</h3>
+                <p class="muted">This will start sending emails to all contacts with email addresses who haven't been contacted yet.</p>
+                <div class="form-group">
+                    <label>Min Delay (seconds)</label>
+                    <input type="number" id="delay-min" class="input" value="10" min="1">
+                </div>
+                <div class="form-group">
+                    <label>Max Delay (seconds)</label>
+                    <input type="number" id="delay-max" class="input" value="60" min="1">
+                </div>
+                <button class="btn btn-primary" onclick="launchCampaign({{ campaign.id }})">Confirm Launch</button>
+                <button class="btn" onclick="closeLaunch()">Cancel</button>
+            </div>
+        </div>
+
+        <div class="card" style="margin-bottom:1.5rem">
+            <h4>Subject: {{ campaign.subject }}</h4>
+            <pre class="body-preview">{{ campaign.body }}</pre>
+        </div>
+
+        <h3>Messages ({{ messages|length }})</h3>
+        {% if messages %}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Contact</th>
+                        <th>Wealth</th>
+                        <th>Tier</th>
+                        <th>Recipient</th>
+                        <th>Sent</th>
+                        <th>Status</th>
+                        <th>Donation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in messages %}
+                    <tr>
+                        <td><strong>{{ m.contact_name or 'Unknown' }}</strong></td>
+                        <td>{% if m.net_worth %}${{ "%.1f"|format(m.net_worth|float) }}B{% endif %}</td>
+                        <td>{% if m.wealth_tier %}<span class="badge badge-{{ m.wealth_tier }}">{{ m.wealth_tier }}</span>{% endif %}</td>
+                        <td class="muted">{{ m.recipient }}</td>
+                        <td class="muted">{{ m.sent_at[:16] if m.sent_at else '—' }}</td>
+                        <td>{{ m.status }}</td>
+                        <td>{% if m.donated_amount %}${{ "%.2f"|format(m.donated_amount) }}{% endif %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>No messages yet. Launch the campaign to start sending.</p>
+        </div>
+        {% endif %}
+    </main>
+
+    <script>
+        function showLaunchOptions() {
+            document.getElementById('launch-modal').style.display = 'block';
+        }
+        function closeLaunch() {
+            document.getElementById('launch-modal').style.display = 'none';
+        }
+        async function launchCampaign(id) {
+            const btn = document.querySelector('#launch-modal .btn-primary');
+            btn.disabled = true;
+            btn.textContent = 'Launching...';
+            const delay_min = parseInt(document.getElementById('delay-min').value) || 10;
+            const delay_max = parseInt(document.getElementById('delay-max').value) || 60;
+            await fetch(`/campaign/${id}/launch`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ delay_min, delay_max })
+            });
+            alert('Campaign launched! Emails are being sent in the background.');
+            location.reload();
+        }
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLaunch(); });
+    </script>
+</body>
+</html>

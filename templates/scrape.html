@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Contacts - Wealth Outreach</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-inner">
+            <h1 class="nav-title">Wealth Outreach</h1>
+            <div class="nav-links">
+                <a href="/">Dashboard</a>
+                <a href="/contacts">Contacts</a>
+                <a href="/campaigns">Campaigns</a>
+                <a href="/templates">Templates</a>
+                <a href="/scrape" class="active">Find Contacts</a>
+                <a href="/settings">Settings</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <h2>Find Wealthy Contacts</h2>
+        <p class="muted">Scrape from 10+ public data sources. Each source independently extracts names, companies, and (where available) emails/phones.</p>
+
+        <!-- Scrape All -->
+        <div class="card" style="margin-bottom:1rem">
+            <div class="flex-between" style="margin-bottom:0">
+                <div>
+                    <h3 style="border:none;padding:0;margin:0">Mass Scrape (All Sources)</h3>
+                    <p class="muted" style="margin-top:0.3rem">Runs all sources sequentially. May take a few minutes.</p>
+                </div>
+                <div style="display:flex;align-items:center;gap:0.5rem">
+                    <input type="number" id="max-items-all" class="input" value="500" min="1" max="3000" style="width:80px">
+                    <button id="scrape-all-btn" class="btn btn-primary" onclick="scrapeAll()">Scrape All</button>
+                </div>
+            </div>
+            <div id="scrape-all-status" style="margin-top:0.5rem"></div>
+        </div>
+
+        <!-- Individual Sources Grid -->
+        <div class="dashboard-grid" style="margin-top:1rem">
+            <div class="card source-card" data-source="forbes">
+                <h3>Forbes Billionaires</h3>
+                <p class="muted">Real-time API — names, net worth, industry, country, age, company. ~3,000 billionaires.</p>
+                <div class="flex-between" style="margin-top:0.5rem">
+                    <input type="number" class="input max-items" value="300" min="1" max="3000" style="width:70px">
+                    <button class="btn btn-sm btn-primary" onclick="scrapeSource('forbes', this)">Scrape</button>
+                </div>
+                <div class="source-status" style="margin-top:0.3rem"></div>
+            </div>
+
+            <div class="card source-card" data-source="wikipedia">
+                <h3>Wikipedia Categories</h3>
+                <p class="muted">Billionaires, CEOs, tech entrepreneurs, philanthropists, hedge fund managers.</p>
+                <div class="flex-between" style="margin-top:0.5rem">
+                    <input type="number" class="input max-items" value="300" min="1" max="1000" style="width:70px">
+                    <button class="btn btn-sm btn-primary" onclick="scrapeSource('wikipedia', this)">Scrape</button>
+                </div>
+                <div class="source-status" style="margin-top:0.3rem"></div>
+            </div>
+
+            <div class="card source-card" data-source="sec">
+                <h3>SEC EDGAR Insiders</h3>
+                <p class="muted">Insider trading filings (Forms 3/4/5). Includes names, addresses, phone numbers, companies, tickers.</p>
+                <div class="flex-between" style="margin-top:0.5rem">
+                    <input type="number" class="input max-items" value="200" min="1" max="500" style="width:70px">
+                    <button class="btn btn-sm btn-primary" onclick="scrapeSource('sec', this)">Scrape</button>
+                </div>
+                <div class="source-status" style="margin-top:0.3rem"></div>
+            </div>
+
+            <div class="card source-card" data-source="teams">
+                <h3>Company Team Pages</h3>
+                <p class="muted">Scrapes company websites' /team, /about, /leadership pages. Goldmine for emails & names.</p>
+                <div class="flex-between" style="margin-top:0.5rem">
+                    <input type="number" class="input max-items" value="200" min="1" max="500" style="width:70px">
+                    <button class="btn btn-sm btn-primary" onclick="scrapeSource('teams', this)">Scrape</button>
+                </div>
+                <div class="source-status" style="margin-top:0.3rem"></div>
+            </div>
+
+            <div class="card source-card" data-source="news">
+                <h3>Google News Wealth</h3>
+                <p class="muted">Extracts names from financial news. Billionaire/millionaire mentions in current articles.</p>
+                <div class="flex-between" style="margin-top:0.5rem">
+                    <input type="number" class="input max-items" value="150" min="1" max="500" style="width:70px">
+                    <button class="btn btn-sm btn-primary" onclick="scrapeSource('news', this)">Scrape</button>
+                </div>
+                <div class="source-status" style="margin-top:0.3rem"></div>
+            </div>
+
+            <div class="card source-card" data-source="google">
+                <h3>Google Dork Search</h3>
+                <p class="muted">Advanced search queries for "CEO email", "net worth", "billionaire profile" to find contact info.</p>
+                <div class="flex-between" style="margin-top:0.5rem">
+                    <input type="number" class="input max-items" value="100" min="1" max="500" style="width:70px">
+                    <button class="btn btn-sm btn-primary" onclick="scrapeSource('google', this)">Scrape</button>
+                </div>
+                <div class="source-status" style="margin-top:0.3rem"></div>
+            </div>
+
+            <div class="card source-card" data-source="bloomberg">
+                <h3>Bloomberg Billionaires</h3>
+                <p class="muted">Bloomberg's billionaire index. Names and rankings scraped from public page.</p>
+                <div class="flex-between" style="margin-top:0.5rem">
+                    <input type="number" class="input max-items" value="100" min="1" max="500" style="width:70px">
+                    <button class="btn btn-sm btn-primary" onclick="scrapeSource('bloomberg', this)">Scrape</button>
+                </div>
+                <div class="source-status" style="margin-top:0.3rem"></div>
+            </div>
+
+            <div class="card source-card" data-source="hurun">
+                <h3>Hurun Global Rich List</h3>
+                <p class="muted">Hurun Report's global rich list. Different coverage from Forbes, especially Asia-heavy.</p>
+                <div class="flex-between" style="margin-top:0.5rem">
+                    <input type="number" class="input max-items" value="200" min="1" max="500" style="width:70px">
+                    <button class="btn btn-sm btn-primary" onclick="scrapeSource('hurun', this)">Scrape</button>
+                </div>
+                <div class="source-status" style="margin-top:0.3rem"></div>
+            </div>
+
+            <div class="card source-card" data-source="angellist">
+                <h3>AngelList Investors</h3>
+                <p class="muted">Angel investors and venture capitalists. Wealthy individuals in the startup ecosystem.</p>
+                <div class="flex-between" style="margin-top:0.5rem">
+                    <input type="number" class="input max-items" value="100" min="1" max="500" style="width:70px">
+                    <button class="btn btn-sm btn-primary" onclick="scrapeSource('angellist', this)">Scrape</button>
+                </div>
+                <div class="source-status" style="margin-top:0.3rem"></div>
+            </div>
+
+            <div class="card source-card" data-source="opencorporates">
+                <h3>OpenCorporates Directors</h3>
+                <p class="muted">Corporate registry directors. Company officers (CEOs, presidents, directors) with jurisdictions.</p>
+                <div class="flex-between" style="margin-top:0.5rem">
+                    <input type="number" class="input max-items" value="100" min="1" max="500" style="width:70px">
+                    <button class="btn btn-sm btn-primary" onclick="scrapeSource('opencorporates', this)">Scrape</button>
+                </div>
+                <div class="source-status" style="margin-top:0.3rem"></div>
+            </div>
+        </div>
+
+        <!-- CSV Import & Email Discovery -->
+        <div class="dashboard-grid" style="margin-top:1.5rem">
+            <div class="card">
+                <h3>Import CSV File</h3>
+                <p class="muted">Upload any CSV with columns: name, email, company, net_worth, industry, country, phone, title, etc.</p>
+                <form id="import-form" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label>CSV File</label>
+                        <input type="file" name="file" accept=".csv" class="input" id="csv-file">
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="import-btn">Upload & Import</button>
+                    <div id="import-status" style="margin-top:0.75rem"></div>
+                </form>
+            </div>
+
+            <div class="card">
+                <h3>Find Contact Info</h3>
+                <p class="muted">Auto-discover emails, phone numbers, and LinkedIn URLs for contacts. Deep crawls company websites + Google dorking + SEC + Crunchbase.</p>
+                <button class="btn btn-primary" onclick="findAllContacts()">Find Emails & Phones</button>
+                <div id="email-status" style="margin-top:0.75rem"></div>
+                <div class="form-group" style="margin-top:0.5rem">
+                    <label>Max contacts to search</label>
+                    <input type="number" id="email-limit" class="input" value="50" min="1" max="500">
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Sources Reference -->
+        <div class="card" style="margin-top:1.5rem">
+            <h4>Data Sources Summary</h4>
+            <table>
+                <thead>
+                    <tr><th>Source</th><th>Type</th><th>Coverage</th><th>Contact Info Available</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Forbes Billionaires</td><td>API Scrape</td><td>~3,000 billionaires</td><td>Names, net worth, industry, country</td></tr>
+                    <tr><td>Wikipedia Categories</td><td>API Scrape</td><td>~5,000+ wealthy individuals</td><td>Names, categories, education, spouse, children</td></tr>
+                    <tr><td>SEC EDGAR</td><td>Public Records</td><td>Recent insider trades</td><td><strong>Names, phone numbers, addresses, company</strong></td></tr>
+                    <tr><td>Company Team Pages</td><td>Web Crawl</td><td>Any company website</td><td><strong>Names, emails, phone numbers, titles</strong></td></tr>
+                    <tr><td>Google Dorking</td><td>Search Engine</td><td>Web-wide</td><td><strong>Emails, LinkedIn URLs</strong></td></tr>
+                    <tr><td>AngelList</td><td>Web Scrape</td><td>Investor profiles</td><td>Names, industries</td></tr>
+                    <tr><td>Bloomberg</td><td>Web Scrape</td><td>Billionaire index</td><td>Names</td></tr>
+                    <tr><td>Hurun Rich List</td><td>Web Scrape</td><td>~500+ billionaires</td><td>Names, industry, country</td></tr>
+                    <tr><td>Google News</td><td>News Scrape</td><td>Current finance news</td><td>Names mentioned in articles</td></tr>
+                    <tr><td>OpenCorporates</td><td>API</td><td>Corporate directors</td><td>Names, companies, titles</td></tr>
+                    <tr><td>Email Discovery</td><td>Multi-Strategy</td><td>Pattern + crawl + dork + SEC</td><td><strong>Emails, phones, LinkedIn, social media</strong></td></tr>
+                    <tr><td>CSV Import</td><td>User Upload</td><td>Any format</td><td>Any columns</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script>
+        async function scrapeAll() {
+            const btn = document.getElementById('scrape-all-btn');
+            const status = document.getElementById('scrape-all-status');
+            const max = document.getElementById('max-items-all').value;
+            btn.disabled = true; btn.textContent = 'Scraping all sources...';
+            status.innerHTML = '<p>Running all scrapers (Forbes, Wikipedia, SEC, Teams, News, Google, Bloomberg, Hurun)...</p>';
+            try {
+                const resp = await fetch('/api/scrape', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ max_items: parseInt(max) }),
+                });
+                const data = await resp.json();
+                status.innerHTML = `<p class="success">✓ Got ${data.count} new contacts!</p>`;
+                setTimeout(() => location.reload(), 1500);
+            } catch (e) {
+                status.innerHTML = `<p class="error">✗ Error: ${e.message}</p>`;
+            }
+            btn.disabled = false; btn.textContent = 'Scrape All';
+        }
+
+        async function scrapeSource(source, btn) {
+            const card = btn.closest('.source-card');
+            const status = card.querySelector('.source-status');
+            const max = card.querySelector('.max-items').value;
+            btn.disabled = true; btn.textContent = 'Scraping...';
+            status.innerHTML = '<p>Fetching...</p>';
+            try {
+                const resp = await fetch(`/api/scrape/${source}`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ max_items: parseInt(max) }),
+                });
+                const data = await resp.json();
+                status.innerHTML = `<p class="success">✓ +${data.count} contacts</p>`;
+                setTimeout(() => status.innerHTML = '', 3000);
+            } catch (e) {
+                status.innerHTML = `<p class="error">✗ ${e.message}</p>`;
+            }
+            btn.disabled = false; btn.textContent = 'Scrape';
+        }
+
+        async function findAllContacts() {
+            const status = document.getElementById('email-status');
+            const limit = document.getElementById('email-limit').value;
+            status.innerHTML = '<p>Searching for emails, phones, LinkedIn URLs...</p>';
+            try {
+                const resp = await fetch('/api/contacts/find-emails', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ limit: parseInt(limit) })
+                });
+                const data = await resp.json();
+                status.innerHTML = `<p class="success">✓ ${data.found} emails, ${data.phones || 0} phones, ${data.linkedin || 0} LinkedIn URLs found</p>`;
+            } catch (e) {
+                status.innerHTML = `<p class="error">✗ ${e.message}</p>`;
+            }
+        }
+
+        document.getElementById('import-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('import-btn');
+            const status = document.getElementById('import-status');
+            const file = document.getElementById('csv-file').files[0];
+            if (!file) { status.innerHTML = '<p class="error">Please select a file</p>'; return; }
+            btn.disabled = true; btn.textContent = 'Importing...';
+            const formData = new FormData();
+            formData.append('file', file);
+            try {
+                const resp = await fetch('/api/import', { method: 'POST', body: formData });
+                const data = await resp.json();
+                status.innerHTML = data.error
+                    ? `<p class="error">✗ ${data.error}</p>`
+                    : `<p class="success">✓ Imported ${data.imported} contacts (${data.skipped} skipped)</p>`;
+            } catch (e) {
+                status.innerHTML = `<p class="error">✗ ${e.message}</p>`;
+            }
+            btn.disabled = false; btn.textContent = 'Upload & Import';
+        });
+    </script>
+</body>
+</html>

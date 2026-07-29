@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wealth Outreach System</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-inner">
+            <h1 class="nav-title">Wealth Outreach</h1>
+            <div class="nav-links">
+                <a href="/" class="active">Dashboard</a>
+                <a href="/contacts">Contacts</a>
+                <a href="/campaigns">Campaigns</a>
+                <a href="/templates">Templates</a>
+                <a href="/scrape">Find Contacts</a>
+                <a href="/settings">Settings</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <h2>Dashboard</h2>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">{{ total }}</div>
+                <div class="stat-label">Total Contacts</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ billionaires }}</div>
+                <div class="stat-label">Billionaires</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ millionaires }}</div>
+                <div class="stat-label">Millionaires</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ with_email }}</div>
+                <div class="stat-label">With Email</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ emailed }}</div>
+                <div class="stat-label">Contacted</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ campaigns }}</div>
+                <div class="stat-label">Campaigns</div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="card" id="top-10-card">
+                <h3>Top 10 Wealthiest</h3>
+                <div id="top-10-list"><p>Loading...</p></div>
+            </div>
+            <div class="card" id="tier-card">
+                <h3>By Wealth Tier</h3>
+                <div id="tier-list"><p>Loading...</p></div>
+            </div>
+            <div class="card" id="country-card">
+                <h3>By Country</h3>
+                <div id="country-list"><p>Loading...</p></div>
+            </div>
+            <div class="card" id="quick-actions">
+                <h3>Quick Actions</h3>
+                <div class="action-buttons">
+                    <a href="/scrape" class="btn">Find Wealthy Contacts</a>
+                    <a href="/campaign/new" class="btn btn-primary">New Campaign</a>
+                    <a href="/contacts" class="btn">Browse All Contacts</a>
+                    <a href="/templates" class="btn">Message Templates</a>
+                    <a href="/api/export" class="btn">Export CSV</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        async function loadStats() {
+            const resp = await fetch('/api/stats');
+            const data = await resp.json();
+            
+            document.getElementById('top-10-list').innerHTML = '<ol>' + data.top_10.map(p => 
+                `<li><strong>${p.name}</strong> — $${p.net_worth}B <span class="badge badge-${p.wealth_tier}">${p.wealth_tier}</span> <span class="muted">${p.country}</span></li>`
+            ).join('') + '</ol>';
+            
+            document.getElementById('tier-list').innerHTML = '<ul>' + data.by_tier.map(t => 
+                `<li><strong>${t.wealth_tier}</strong>: ${t.count}</li>`
+            ).join('') + '</ul>';
+            
+            document.getElementById('country-list').innerHTML = '<ul>' + data.by_country.map(c => 
+                `<li><strong>${c.country}</strong>: ${c.count}</li>`
+            ).join('') + '</ul>';
+        }
+        loadStats();
+    </script>
+</body>
+</html>

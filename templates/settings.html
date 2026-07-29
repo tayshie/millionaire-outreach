@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Millionaire Outreach</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-inner">
+            <h1 class="nav-title">Millionaire Outreach</h1>
+            <div class="nav-links">
+                <a href="/">Dashboard</a>
+                <a href="/contacts">Contacts</a>
+                <a href="/campaigns">Campaigns</a>
+                <a href="/templates">Templates</a>
+                <a href="/scrape">Find Contacts</a>
+                <a href="/settings" class="active">Settings</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <form method="POST" style="max-width:700px">
+            <h2>SMTP Settings</h2>
+            <p class="muted">Configure email sending. Use a dedicated Gmail account with an App Password for best deliverability.</p>
+
+            <div class="card" style="margin-bottom:1.5rem">
+                <div class="form-group">
+                    <label>SMTP Server</label>
+                    <input type="text" name="smtp_server" class="input" value="{{ settings.get('smtp_server', 'smtp.gmail.com') }}" placeholder="smtp.gmail.com">
+                </div>
+                <div class="form-group">
+                    <label>SMTP Port</label>
+                    <input type="number" name="smtp_port" class="input" value="{{ settings.get('smtp_port', '587') }}" placeholder="587">
+                </div>
+                <div class="form-group">
+                    <label>Use TLS</label>
+                    <select name="smtp_use_tls" class="input">
+                        <option value="true" {% if settings.get('smtp_use_tls', 'true') == 'true' %}selected{% endif %}>Yes (STARTTLS)</option>
+                        <option value="false" {% if settings.get('smtp_use_tls', 'true') == 'false' %}selected{% endif %}>No (SSL)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Sender Email</label>
+                    <input type="email" name="smtp_email" class="input" value="{{ settings.get('smtp_email', '') }}" placeholder="your.email@gmail.com">
+                </div>
+                <div class="form-group">
+                    <label>App Password</label>
+                    <input type="password" name="smtp_password" class="input" value="{{ settings.get('smtp_password', '') }}" placeholder="Gmail App Password">
+                    <small class="muted">For Gmail: use an <a href="https://support.google.com/accounts/answer/185833" target="_blank">App Password</a>, not your regular password.</small>
+                </div>
+                <div class="form-group">
+                    <label>Sender Name</label>
+                    <input type="text" name="sender_name" class="input" value="{{ settings.get('sender_name', '') }}" placeholder="Your Name">
+                </div>
+                <div class="form-group">
+                    <label>Reply-To Email</label>
+                    <input type="email" name="reply_to" class="input" value="{{ settings.get('reply_to', '') }}" placeholder="Optional: different reply address">
+                </div>
+            </div>
+
+            <h2>Payment Settings</h2>
+            <p class="muted">Configure payment addresses. Use <code>{payment_links}</code> in templates to auto-inject all configured methods into your emails.</p>
+
+            <div class="card" style="margin-bottom:1.5rem">
+                <div class="form-group">
+                    <label>PayPal Link / Email</label>
+                    <input type="text" name="paypal_link" class="input" value="{{ settings.get('paypal_link', '') }}" placeholder="e.g. https://paypal.me/yourname or your@email.com">
+                </div>
+                <div class="form-group">
+                    <label>Venmo Handle</label>
+                    <input type="text" name="venmo_link" class="input" value="{{ settings.get('venmo_link', '') }}" placeholder="e.g. @YourVenmo">
+                </div>
+                <div class="form-group">
+                    <label>CashApp Handle</label>
+                    <input type="text" name="cashapp_link" class="input" value="{{ settings.get('cashapp_link', '') }}" placeholder="e.g. $YourCashApp">
+                </div>
+                <div class="form-group">
+                    <label>Bitcoin (BTC) Address</label>
+                    <input type="text" name="btc_address" class="input" value="{{ settings.get('btc_address', '') }}" placeholder="bc1... or 1...">
+                </div>
+                <div class="form-group">
+                    <label>Ethereum (ETH) Address</label>
+                    <input type="text" name="eth_address" class="input" value="{{ settings.get('eth_address', '') }}" placeholder="0x...">
+                </div>
+                <div class="form-group">
+                    <label>Solana (SOL) Address</label>
+                    <input type="text" name="sol_address" class="input" value="{{ settings.get('sol_address', '') }}" placeholder="SOL address...">
+                </div>
+                <div class="form-group">
+                    <label>Payment Note (optional)</label>
+                    <input type="text" name="payment_note" class="input" value="{{ settings.get('payment_note', '') }}" placeholder="e.g. 'Any amount helps!'">
+                </div>
+                <div class="form-group">
+                    <label>Preview (how {payment_links} will appear)</label>
+                    <pre class="template-preview">{% if settings.get('paypal_link') %}PayPal: {{ settings.get('paypal_link') }}
+{% endif %}{% if settings.get('venmo_link') %}Venmo: {{ settings.get('venmo_link') }}
+{% endif %}{% if settings.get('cashapp_link') %}CashApp: {{ settings.get('cashapp_link') }}
+{% endif %}{% if settings.get('btc_address') %}Bitcoin (BTC): {{ settings.get('btc_address') }}
+{% endif %}{% if settings.get('eth_address') %}Ethereum (ETH): {{ settings.get('eth_address') }}
+{% endif %}{% if settings.get('sol_address') %}Solana (SOL): {{ settings.get('sol_address') }}
+{% endif %}{% if not settings.get('paypal_link') and not settings.get('venmo_link') and not settings.get('cashapp_link') and not settings.get('btc_address') and not settings.get('eth_address') and not settings.get('sol_address') %}<span class="muted">No payment methods configured yet</span>{% endif %}</pre>
+                </div>
+            </div>
+
+            <h2>Rate Limiting</h2>
+            <div class="card" style="margin-bottom:1.5rem">
+                <div class="form-group">
+                    <label>Daily Send Limit</label>
+                    <input type="number" name="daily_limit" class="input" value="{{ settings.get('daily_limit', '100') }}">
+                </div>
+                <div class="form-group">
+                    <label>Min Delay Between Emails (seconds)</label>
+                    <input type="number" name="delay_min" class="input" value="{{ settings.get('delay_min', '10') }}">
+                </div>
+                <div class="form-group">
+                    <label>Max Delay Between Emails (seconds)</label>
+                    <input type="number" name="delay_max" class="input" value="{{ settings.get('delay_max', '60') }}">
+                    <small class="muted">Random delay between emails to avoid looking like spam.</small>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Save All Settings</button>
+        </form>
+    </main>
+</body>
+</html>

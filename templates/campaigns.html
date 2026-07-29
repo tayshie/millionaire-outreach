@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campaigns - Millionaire Outreach</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-inner">
+            <h1 class="nav-title">Millionaire Outreach</h1>
+            <div class="nav-links">
+                <a href="/">Dashboard</a>
+                <a href="/contacts">Contacts</a>
+                <a href="/campaigns" class="active">Campaigns</a>
+                <a href="/templates">Templates</a>
+                <a href="/scrape">Scrape</a>
+                <a href="/settings">Settings</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="flex-between">
+            <h2>Campaigns</h2>
+            <a href="/campaign/new" class="btn btn-primary">+ New Campaign</a>
+        </div>
+
+        {% if campaigns %}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Subject</th>
+                        <th>Sent</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in campaigns %}
+                    <tr>
+                        <td><strong>{{ c.name }}</strong></td>
+                        <td class="muted">{{ c.subject[:50] }}{% if c.subject|length > 50 %}...{% endif %}</td>
+                        <td>{{ c.sent_count }}</td>
+                        <td>
+                            <span class="badge badge-{{ c.status }}">
+                                {{ c.status }}
+                            </span>
+                        </td>
+                        <td class="muted">{{ c.created_at[:10] }}</td>
+                        <td>
+                            <a href="/campaign/{{ c.id }}" class="btn btn-sm">View</a>
+                            <a href="/campaign/{{ c.id }}/edit" class="btn btn-sm">Edit</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>No campaigns yet. <a href="/campaign/new">Create your first campaign</a>.</p>
+        </div>
+        {% endif %}
+    </main>
+</body>
+</html>

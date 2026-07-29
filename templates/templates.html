@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Templates - Millionaire Outreach</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-inner">
+            <h1 class="nav-title">Millionaire Outreach</h1>
+            <div class="nav-links">
+                <a href="/">Dashboard</a>
+                <a href="/contacts">Contacts</a>
+                <a href="/campaigns">Campaigns</a>
+                <a href="/templates" class="active">Templates</a>
+                <a href="/scrape">Scrape</a>
+                <a href="/settings">Settings</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="flex-between">
+            <h2>Message Templates</h2>
+            <button class="btn btn-primary" onclick="showNewTemplate()">+ New Template</button>
+        </div>
+
+        <!-- New template form -->
+        <div id="new-template-form" class="card" style="display:none;margin-bottom:1.5rem">
+            <h4>New Template</h4>
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" id="new-name" class="input" placeholder="e.g. Warm Introduction">
+            </div>
+            <div class="form-group">
+                <label>Subject</label>
+                <input type="text" id="new-subject" class="input" placeholder="Subject line with {name}, {rank}, etc.">
+            </div>
+            <div class="form-group">
+                <label>Body</label>
+                <textarea id="new-body" class="input textarea" rows="12" placeholder="Message body with {name}, {rank}, {net_worth}, {source}, {industry}, {country}, {company}, {amount}, {payment_links}"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Category</label>
+                <select id="new-category" class="input">
+                    <option value="general">General</option>
+                    <option value="philanthropy">Philanthropy</option>
+                    <option value="direct">Direct Ask</option>
+                    <option value="story">Story-Based</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" onclick="saveTemplate()">Save Template</button>
+            <button class="btn" onclick="hideNewTemplate()">Cancel</button>
+        </div>
+
+        <div class="template-grid">
+            {% for t in templates %}
+            <div class="card template-card" data-id="{{ t.id }}">
+                <div class="template-header">
+                    <h4>{{ t.name }}</h4>
+                    <span class="badge badge-{{ t.category }}">{{ t.category }}</span>
+                </div>
+                <p class="muted template-subject"><strong>Subject:</strong> {{ t.subject[:80] }}{% if t.subject|length > 80 %}...{% endif %}</p>
+                <pre class="template-preview">{{ t.body[:300] }}{% if t.body|length > 300 %}...{% endif %}</pre>
+                <div class="template-actions">
+                    <button class="btn btn-sm" onclick="useTemplate('{{ t.name|e }}', '{{ t.subject|e }}', {{ t.id }})">Use</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteTemplate({{ t.id }})">Delete</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+
+    <script>
+        function showNewTemplate() {
+            document.getElementById('new-template-form').style.display = 'block';
+        }
+        function hideNewTemplate() {
+            document.getElementById('new-template-form').style.display = 'none';
+        }
+        async function saveTemplate() {
+            const data = {
+                name: document.getElementById('new-name').value,
+                subject: document.getElementById('new-subject').value,
+                body: document.getElementById('new-body').value,
+                category: document.getElementById('new-category').value,
+            };
+            if (!data.name || !data.subject || !data.body) {
+                alert('Please fill in all fields');
+                return;
+            }
+            await fetch('/api/templates', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data),
+            });
+            location.reload();
+        }
+        async function deleteTemplate(id) {
+            if (!confirm('Delete this template?')) return;
+            await fetch('/api/templates/' + id, { method: 'DELETE' });
+            location.reload();
+        }
+        function useTemplate(name, subject, id) {
+            window.location.href = '/campaign/new?template=' + id;
+        }
+    </script>
+</body>
+</html>
