@@ -265,9 +265,14 @@ def new_campaign():
             target_count = conn.execute('SELECT COUNT(*) FROM contacts WHERE email IS NOT NULL AND email != ""').fetchone()[0]
         
         body = request.form['body']
+        follow_ups_raw = request.form.get('follow_ups', '[]')
+        try:
+            follow_ups = json.loads(follow_ups_raw) if isinstance(follow_ups_raw, str) else follow_ups_raw
+        except:
+            follow_ups = []
         conn.execute(
-            'INSERT INTO campaigns (name, subject, body, target_count, status) VALUES (?,?,?,?,?)',
-            (request.form['name'], request.form['subject'], body, target_count, 'draft')
+            'INSERT INTO campaigns (name, subject, body, follow_ups, target_tier, target_count, status) VALUES (?,?,?,?,?,?,?)',
+            (request.form['name'], request.form['subject'], body, json.dumps(follow_ups), target, target_count, 'draft')
         )
         conn.commit()
         conn.close()
@@ -280,7 +285,11 @@ def new_campaign():
 @app.route('/campaign/<int:id>')
 def view_campaign(id):
     conn = get_db()
-    campaign = conn.execute('SELECT * FROM campaigns WHERE id = ?', (id,)).fetchone()
+    campaign = dict(conn.execute('SELECT * FROM campaigns WHERE id = ?', (id,)).fetchone())
+    try:
+        campaign['follow_ups'] = json.loads(campaign.get('follow_ups', '[]'))
+    except:
+        campaign['follow_ups'] = []
     messages = conn.execute(
         'SELECT m.*, c.name as contact_name, c.net_worth, c.wealth_tier FROM messages m LEFT JOIN contacts c ON m.contact_id = c.id WHERE m.campaign_id = ? ORDER BY m.sent_at DESC',
         (id,)
@@ -289,16 +298,26 @@ def view_campaign(id):
         'SELECT COUNT(*) as total, SUM(CASE WHEN status="sent" THEN 1 ELSE 0 END) as sent, SUM(CASE WHEN replied_at IS NOT NULL THEN 1 ELSE 0 END) as replies, SUM(CASE WHEN donated_amount IS NOT NULL THEN 1 ELSE 0 END) as donations, COALESCE(SUM(donated_amount), 0) as donation_total FROM messages WHERE campaign_id = ?',
         (id,)
     ).fetchone()
+    # Count replies per contact to track follow-up stage
+    contact_stages = {}
+    for m in messages:
+        cid = m['contact_id']
+        contact_stages[cid] = contact_stages.get(cid, 0) + 1
     conn.close()
-    return render_template('campaign_view.html', campaign=campaign, messages=messages, stats=stats)
+    return render_template('campaign_view.html', campaign=campaign, messages=messages, stats=stats, contact_stages=contact_stages)
 
 @app.route('/campaign/<int:id>/edit', methods=['GET', 'POST'])
 def edit_campaign(id):
     conn = get_db()
     if request.method == 'POST':
+        follow_ups_raw = request.form.get('follow_ups', '[]')
+        try:
+            follow_ups = json.loads(follow_ups_raw) if isinstance(follow_ups_raw, str) else follow_ups_raw
+        except:
+            follow_ups = []
         conn.execute(
-            'UPDATE campaigns SET name=?, subject=?, body=? WHERE id=?',
-            (request.form['name'], request.form['subject'], request.form['body'], id)
+            'UPDATE campaigns SET name=?, subject=?, body=?, follow_ups=? WHERE id=?',
+            (request.form['name'], request.form['subject'], request.form['body'], json.dumps(follow_ups), id)
         )
         conn.commit()
         conn.close()
@@ -312,6 +331,13 @@ def edit_campaign(id):
 def launch_campaign(id):
     data = request.json or {}
     result = run_campaign(id, delay_min=data.get('delay_min', 10), delay_max=data.get('delay_max', 60))
+    return jsonify(result)
+
+@app.route('/campaign/<int:id>/send-followups', methods=['POST'])
+def send_campaign_followups(id):
+    data = request.json or {}
+    from email_sender import send_follow_ups
+    result = send_follow_ups(id, batch_size=data.get('batch_size', 50))
     return jsonify(result)
 
 @app.route('/campaign/<int:id>/delete', methods=['POST'])

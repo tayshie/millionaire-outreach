@@ -58,6 +58,8 @@ def init_db():
             name TEXT NOT NULL,
             subject TEXT,
             body TEXT,
+            follow_ups TEXT DEFAULT '[]',
+            target_tier TEXT DEFAULT 'all',
             target_count INTEGER DEFAULT 0,
             sent_count INTEGER DEFAULT 0,
             open_count INTEGER DEFAULT 0,
@@ -108,6 +110,10 @@ def init_db():
         CREATE INDEX IF NOT EXISTS idx_contacts_industry ON contacts(industry);
         CREATE INDEX IF NOT EXISTS idx_contacts_email ON contacts(email);
     ''')
+
+    add_column(conn, "campaigns", "follow_ups", "TEXT DEFAULT '[]'")
+    add_column(conn, "campaigns", "target_tier", "TEXT DEFAULT 'all'")
+    add_column(conn, "messages", "step_index", "INTEGER DEFAULT 0")
 
     for col, ctype in [
         ("twitter_handle", "TEXT"), ("instagram_handle", "TEXT"),

@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ campaign.name }} - Wealth Outreach</title>
     <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .step-badge { display:inline-block; background:#2c3e50; color:#fff; border-radius:12px; padding:2px 10px; font-size:0.75rem; }
+        .step-badge.step-0 { background:#2980b9; }
+        .step-badge.step-1 { background:#27ae60; }
+        .step-badge.step-2 { background:#8e44ad; }
+        .step-badge.step-3 { background:#d35400; }
+        .step-badge.step-4 { background:#c0392b; }
+    </style>
 </head>
 <body>
     <nav class="nav">
@@ -28,6 +36,9 @@
                 {% if campaign.status == 'draft' %}
                 <button class="btn btn-primary" onclick="showLaunchOptions()">Launch Campaign</button>
                 <a href="/campaign/{{ campaign.id }}/edit" class="btn">Edit</a>
+                {% endif %}
+                {% if campaign.status == 'active' and campaign.follow_ups|length > 0 %}
+                <button class="btn" onclick="sendFollowUps({{ campaign.id }})">Send Follow-Ups Now</button>
                 {% endif %}
                 <form method="POST" action="/campaign/{{ campaign.id }}/delete" style="display:inline" onsubmit="return confirm('Delete this campaign and all its messages?')">
                     <button class="btn btn-danger">Delete</button>
@@ -64,7 +75,10 @@
         <div id="launch-modal" class="modal" style="display:none">
             <div class="modal-content card" style="max-width:500px;margin:2rem auto">
                 <h3>Launch Campaign</h3>
-                <p class="muted">This will start sending emails to all contacts with email addresses who haven't been contacted yet.</p>
+                <p class="muted">This will send Email #1 to all contacts with email addresses who haven't been contacted yet.</p>
+                {% if campaign.follow_ups|length > 0 %}
+                <p class="muted">Follow-up emails ({{ campaign.follow_ups|length }}) will be sent automatically on schedule.</p>
+                {% endif %}
                 <div class="form-group">
                     <label>Min Delay (seconds)</label>
                     <input type="number" id="delay-min" class="input" value="10" min="1">
@@ -78,9 +92,26 @@
             </div>
         </div>
 
+        <!-- Sequence Display -->
         <div class="card" style="margin-bottom:1.5rem">
-            <h4>Subject: {{ campaign.subject }}</h4>
-            <pre class="body-preview">{{ campaign.body }}</pre>
+            <h3>Email Sequence</h3>
+            {% set all_emails = [{'subject': campaign.subject, 'body': campaign.body, 'delay_days': 0, 'label': 'First Touch'}] %}
+            {% if campaign.follow_ups %}
+                {% for fu in campaign.follow_ups %}
+                    {% set _ = all_emails.append({'subject': fu.subject, 'body': fu.body, 'delay_days': fu.delay_days, 'label': 'Follow-Up #' + loop|string}) %}
+                {% endfor %}
+            {% endif %}
+            {% for email in all_emails %}
+            <div class="sequence-step" style="border:1px solid #333;border-radius:6px;padding:1em;margin:0.75em 0;{% if loop.first %}border-left:4px solid #2980b9{% elif loop.index == 2 %}border-left:4px solid #27ae60{% elif loop.index == 3 %}border-left:4px solid #8e44ad{% else %}border-left:4px solid #d35400{% endif %}">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5em;">
+                    <strong>{% if loop.first %}Email #1{% else %}Email #{{ loop.index }}{% endif %} ({{ email.label }})</strong>
+                    {% if email.delay_days > 0 %}<span class="muted">Send {{ email.delay_days }} days after previous</span>{% endif %}
+                </div>
+                <div style="background:#111;padding:0.5em;border-radius:4px;font-size:0.9rem;">
+                    <strong>Subject:</strong> {{ email.subject }}
+                </div>
+            </div>
+            {% endfor %}
         </div>
 
         <h3>Messages ({{ messages|length }})</h3>
@@ -89,6 +120,7 @@
             <table>
                 <thead>
                     <tr>
+                        <th>Step</th>
                         <th>Contact</th>
                         <th>Wealth</th>
                         <th>Tier</th>
@@ -101,6 +133,7 @@
                 <tbody>
                     {% for m in messages %}
                     <tr>
+                        <td><span class="step-badge step-{{ m.step_index or 0 }}">#{{ (m.step_index or 0) + 1 }}</span></td>
                         <td><strong>{{ m.contact_name or 'Unknown' }}</strong></td>
                         <td>{% if m.net_worth %}${{ "%.1f"|format(m.net_worth|float) }}B{% endif %}</td>
                         <td>{% if m.wealth_tier %}<span class="badge badge-{{ m.wealth_tier }}">{{ m.wealth_tier }}</span>{% endif %}</td>
@@ -139,6 +172,18 @@
                 body: JSON.stringify({ delay_min, delay_max })
             });
             alert('Campaign launched! Emails are being sent in the background.');
+            location.reload();
+        }
+        async function sendFollowUps(id) {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = 'Sending...';
+            await fetch(`/campaign/${id}/send-followups`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ batch_size: 50 })
+            });
+            alert('Follow-ups sent!');
             location.reload();
         }
         document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLaunch(); });
